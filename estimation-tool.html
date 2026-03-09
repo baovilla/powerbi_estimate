@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Power BI Dev Estimation Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #0f1117;
+      font-family: 'DM Sans', 'Segoe UI', sans-serif;
+      color: #e2e8f0;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .wrapper { max-width: 920px; margin: 0 auto; }
+
+    .eyebrow { font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: #6366f1; font-weight: 600; margin-bottom: 0.35rem; }
+    h1 { font-size: 1.75rem; font-weight: 700; line-height: 1.2; }
+    .subtitle { color: #64748b; margin-top: 0.4rem; font-size: 0.9rem; margin-bottom: 2rem; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+    @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+
+    .section-card { background: #161b27; border: 1px solid #1e2840; border-radius: 14px; padding: 1.5rem; }
+    .card-title { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1rem; margin-bottom: 1.25rem; }
+
+    .lbl { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; margin-bottom: 0.4rem; }
+
+    select, input[type=number], input[type=text] {
+      background: #1e2230;
+      border: 1px solid #2d3348;
+      color: #e2e8f0;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    select:focus, input:focus { border-color: #6366f1; }
+    select option { background: #1e2230; }
+    input[type=text]::placeholder { color: #334155; }
+
+    .hint { font-size: 0.75rem; color: #475569; margin: 0.35rem 0 0.85rem; min-height: 1em; }
+    .field-row { margin-bottom: 0.75rem; }
+
+    .add-row { display: grid; grid-template-columns: 1fr 90px auto; gap: 0.65rem; align-items: end; margin-top: 0.75rem; }
+    @media (max-width: 540px) { .add-row { grid-template-columns: 1fr 1fr; } }
+
+    .btn { padding: 0.5rem 1.1rem; border-radius: 8px; border: none; cursor: pointer; font-family: inherit; font-size: 0.875rem; font-weight: 600; transition: all 0.15s; white-space: nowrap; }
+    .btn-primary { background: #6366f1; color: white; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-ghost { background: transparent; color: #64748b; border: 1px solid #2d3348; font-size: 0.8rem; padding: 0.35rem 0.85rem; }
+    .btn-ghost:hover { color: #ef4444; border-color: #ef4444; }
+    .btn-danger-sm { background: none; border: none; color: #2d3348; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 0 0.25rem; transition: color 0.15s; }
+    .btn-danger-sm:hover { color: #ef4444; }
+
+    /* History */
+    .history-card { background: #161b27; border: 1px solid #1e2840; border-radius: 14px; margin-bottom: 1.25rem; overflow: hidden; }
+    .history-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #1e2840; }
+    .history-header-title { font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
+    .history-count { background: #1e2230; border: 1px solid #2d3348; border-radius: 20px; font-size: 0.72rem; font-family: 'DM Mono', monospace; padding: 0.15rem 0.6rem; color: #94a3b8; }
+
+    .history-empty { padding: 2.5rem; text-align: center; color: #2d3348; font-size: 0.875rem; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid #1e2840; }
+    thead th { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; padding: 0.6rem 1.25rem; text-align: left; }
+    thead th.r { text-align: right; }
+
+    tbody tr { border-bottom: 1px solid #0f1117; transition: background 0.12s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #1a2035; }
+    tbody td { padding: 0.7rem 1.25rem; font-size: 0.85rem; vertical-align: middle; }
+
+    td.r { text-align: right; font-family: 'DM Mono', monospace; font-size: 0.82rem; }
+
+    .type-pill { display: inline-flex; align-items: center; gap: 0.3rem; border-radius: 6px; padding: 0.18rem 0.55rem; font-size: 0.7rem; font-weight: 600; border: 1px solid transparent; }
+    .pill-ds { background: #6366f115; border-color: #6366f133; color: #a5b4fc; }
+    .pill-vs { background: #a855f715; border-color: #a855f733; color: #d8b4fe; }
+    .complexity-tag { font-size: 0.72rem; color: #475569; display: block; margin-top: 0.15rem; }
+    .unnamed { color: #334155; font-style: italic; }
+
+    tfoot tr { border-top: 1px solid #1e2840; }
+    tfoot td { padding: 0.6rem 1.25rem; font-size: 0.8rem; color: #64748b; }
+    tfoot td.r { font-family: 'DM Mono', monospace; font-weight: 600; }
+    tr.divider td { padding: 0; height: 1px; background: #1e2840; }
+
+    /* Total */
+    .total-card { background: linear-gradient(135deg, #1a1f35 0%, #161b27 100%); border: 1px solid #2d3348; border-radius: 16px; padding: 2rem; text-align: center; position: relative; overflow: hidden; }
+    .total-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899); }
+    .total-label { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: #64748b; margin-bottom: 0.75rem; }
+    .total-empty { color: #2d3348; font-size: 1rem; padding: 1rem 0; }
+    .big-num { font-size: 3.5rem; font-weight: 700; font-family: 'DM Mono', monospace; line-height: 1; }
+    .range-display { color: #475569; font-size: 0.875rem; margin-top: 0.4rem; margin-bottom: 1.5rem; }
+    .band-badge { display: inline-block; border-radius: 20px; padding: 0.2rem 0.9rem; font-size: 0.8rem; font-weight: 600; margin-bottom: 1.75rem; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; max-width: 480px; margin: 0 auto; }
+    .stat-box { background: #1e2230; border-radius: 10px; padding: 1rem; }
+    .stat-num { font-family: 'DM Mono', monospace; font-size: 1.35rem; font-weight: 600; }
+    .stat-name { font-size: 0.7rem; color: #475569; margin-top: 0.25rem; }
+
+    .bar-wrap { max-width: 480px; margin: 1.25rem auto 0; }
+    .bar-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: #475569; margin-bottom: 0.35rem; }
+    .bar { height: 6px; border-radius: 3px; background: #1e2230; overflow: hidden; }
+    .bar-inner { display: flex; height: 100%; }
+    .bar-ds { background: #6366f1; height: 100%; transition: width 0.4s ease; }
+    .bar-vs { background: #a855f7; height: 100%; transition: width 0.4s ease; }
+    .disclaimer { margin-top: 1.25rem; font-size: 0.7rem; color: #2d3348; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="eyebrow">Power BI Dev</div>
+  <h1>Estimation Calculator</h1>
+  <p class="subtitle">Add datasets and visuals to build your project estimate.</p>
+
+  <div class="grid2">
+    <!-- DATASETS -->
+    <div class="section-card">
+      <div class="card-title">🗄️ Dataset</div>
+
+      <div class="field-row">
+        <div class="lbl">Name <span style="color:#334155;font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></div>
+        <input type="text" id="ds-name" placeholder="e.g. Sales Fact Table" maxlength="60" />
+      </div>
+
+      <div class="field-row">
+        <div class="lbl">Complexity</div>
+        <select id="ds-select" onchange="onDsChange()">
+          <option value="0">Very Simple (1-2 SP)</option>
+          <option value="1">Simple (3-4 SP)</option>
+          <option value="2">Medium (5-6 SP)</option>
+          <option value="3">Complex (7-9 SP)</option>
+          <option value="4">Very Complex (10+ SP)</option>
+        </select>
+        <div class="hint" id="ds-hint">Direct passthrough, no transformations</div>
+      </div>
+
+      <div class="add-row">
+        <div>
+          <div class="lbl">Quantity</div>
+          <input type="number" id="ds-qty" value="1" min="1" max="50" />
+        </div>
+        <div style="align-self:end">
+          <button class="btn btn-primary" onclick="addDataset()">+ Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISUALS -->
+    <div class="section-card">
+      <div class="card-title">📊 Visual / Card</div>
+
+      <div class="field-row">
+        <div class="lbl">Name <span style="color:#334155;font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></div>
+        <input type="text" id="vs-name" placeholder="e.g. Revenue KPI Card" maxlength="60" />
+      </div>
+
+      <div class="field-row">
+        <div class="lbl">Type</div>
+        <select id="vs-select" onchange="onVsChange()">
+          <option value="0">Static Display (1 SP)</option>
+          <option value="1">Formatted Card / Simple Chart (2 SP)</option>
+          <option value="2">Multi-element Visual (3 SP)</option>
+          <option value="3">Complex Visual (6 SP)</option>
+          <option value="4">Composite / Interactive (8 SP)</option>
+        </select>
+        <div class="hint" id="vs-hint">Single-value card or static label</div>
+      </div>
+
+      <div class="add-row">
+        <div>
+          <div class="lbl">Quantity</div>
+          <input type="number" id="vs-qty" value="1" min="1" max="100" />
+        </div>
+        <div style="align-self:end">
+          <button class="btn btn-primary" onclick="addVisual()">+ Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Table -->
+  <div class="history-card">
+    <div class="history-header">
+      <div class="history-header-title">
+        📋 Items Added
+        <span class="history-count" id="history-count">0</span>
+      </div>
+      <div id="clear-btn-wrap" style="display:none">
+        <button class="btn btn-ghost" onclick="clearAll()">Clear all</button>
+      </div>
+    </div>
+    <div class="history-empty" id="history-empty">No items yet — add a dataset or visual above.</div>
+    <div id="history-table-wrap" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:28%">Name</th>
+            <th>Type / Complexity</th>
+            <th class="r">Qty</th>
+            <th class="r">SP</th>
+            <th class="r">Est. Time</th>
+            <th style="width:2rem"></th>
+          </tr>
+        </thead>
+        <tbody id="history-tbody"></tbody>
+        <tfoot id="history-tfoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Total card -->
+  <div class="total-card">
+    <div class="total-label">Total Estimate</div>
+    <div id="total-empty" class="total-empty">Add items above to see your estimate</div>
+    <div id="total-content" style="display:none">
+      <div class="big-num" id="total-big"></div>
+      <div class="range-display" id="total-range"></div>
+      <div class="band-badge" id="total-band"></div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-num" style="color:#a5b4fc" id="stat-ds"></div>
+          <div class="stat-name">Datasets</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:#d8b4fe" id="stat-vs"></div>
+          <div class="stat-name">Visuals</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:#94a3b8" id="stat-sp"></div>
+          <div class="stat-name">Story Points</div>
+        </div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-labels">
+          <span id="bar-ds-label">🗄️ Datasets</span>
+          <span id="bar-vs-label">📊 Visuals</span>
+        </div>
+        <div class="bar">
+          <div class="bar-inner">
+            <div class="bar-ds" id="bar-ds" style="width:50%"></div>
+            <div class="bar-vs" id="bar-vs" style="width:50%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="disclaimer">Range shown is ×0.8 (optimistic) to ×1.3 (with buffer). Does not include QA or review cycles.</div>
+    </div>
+  </div>
+
+</div>
+<script>
+  const DS_DATA = [
+    { label: "Very Simple",  sp: 1, hours: 0.25,  desc: "Direct passthrough, no transformations" },
+    { label: "Simple",       sp: 2, hours: 0.75,  desc: "Single source, light Power Query shaping" },
+    { label: "Medium",       sp: 3, hours: 2,     desc: "Multi-table JOINs or Power Query with merge/expand" },
+    { label: "Complex",      sp: 5, hours: 4.5,   desc: "Derived tables, 5+ PQ steps, DAX calc columns" },
+    { label: "Very Complex", sp: 8, hours: 12,    desc: "UNION ALL, cross-joins, massive DAX SWITCH" },
+  ];
+  const VS_DATA = [
+    { label: "Static Display",              sp: 1, hours: 0.125, desc: "Single-value card or static label" },
+    { label: "Formatted Card/Simple Chart", sp: 2, hours: 0.375, desc: "Formatted card or simple chart/slicer" },
+    { label: "Multi-element Visual",        sp: 3, hours: 0.75,  desc: "Matrix, multi-series chart, new simple measure" },
+    { label: "Complex Visual",              sp: 6, hours: 1.5,   desc: "New complex DAX, drill-through, dynamic titles" },
+    { label: "Composite / Interactive",     sp: 8, hours: 3,     desc: "Full page: 6+ visuals + slicers + bookmarks" },
+  ];
+
+  let items = [];
+  let uid = 0;
+
+  const $ = id => document.getElementById(id);
+
+  function h2d(h) {
+    if (h < 1) return Math.round(h * 60) + ' min';
+    if (h < 8) return (h % 1 === 0 ? h : h.toFixed(1)) + 'h';
+    const d = h / 8;
+    return (d % 1 === 0 ? d : d.toFixed(1)) + 'd';
+  }
+
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function onDsChange() { $('ds-hint').textContent = DS_DATA[+$('ds-select').value].desc; }
+  function onVsChange() { $('vs-hint').textContent = VS_DATA[+$('vs-select').value].desc; }
+
+  function addDataset() {
+    const data = DS_DATA[+$('ds-select').value];
+    const qty  = Math.max(1, +$('ds-qty').value || 1);
+    const name = $('ds-name').value.trim();
+    items.push({ id: ++uid, kind: 'ds', name, data, qty });
+    $('ds-name').value = '';
+    render();
+  }
+
+  function addVisual() {
+    const data = VS_DATA[+$('vs-select').value];
+    const qty  = Math.max(1, +$('vs-qty').value || 1);
+    const name = $('vs-name').value.trim();
+    items.push({ id: ++uid, kind: 'vs', name, data, qty });
+    $('vs-name').value = '';
+    render();
+  }
+
+  function removeItem(id) { items = items.filter(i => i.id !== id); render(); }
+  function clearAll()      { items = []; render(); }
+
+  function getBand(h) {
+    if (!h)   return { label: '—',          color: '#94a3b8' };
+    if (h < 2) return { label: 'Quick Win',  color: '#22c55e' };
+    if (h < 8) return { label: 'Half-Day',   color: '#3b82f6' };
+    if (h<24)  return { label: 'Multi-Day',  color: '#f59e0b' };
+    return           { label: 'Large Build', color: '#ef4444' };
+  }
+
+  function render() {
+    const ds = items.filter(i => i.kind === 'ds');
+    const vs = items.filter(i => i.kind === 'vs');
+    const totalDsH = ds.reduce((s,i) => s + i.data.hours * i.qty, 0);
+    const totalVsH = vs.reduce((s,i) => s + i.data.hours * i.qty, 0);
+    const totalH   = totalDsH + totalVsH;
+    const totalSP  = items.reduce((s,i) => s + i.data.sp * i.qty, 0);
+    const totalQty = items.reduce((s,i) => s + i.qty, 0);
+
+    $('history-count').textContent = totalQty;
+    const has = items.length > 0;
+    $('history-empty').style.display      = has ? 'none'  : 'block';
+    $('history-table-wrap').style.display = has ? 'block' : 'none';
+    $('clear-btn-wrap').style.display     = has ? 'block' : 'none';
+
+    if (has) {
+      const tbody = $('history-tbody');
+      tbody.innerHTML = '';
+
+      const renderRows = (group) => group.forEach(item => {
+        const isDs = item.kind === 'ds';
+        const tr   = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.name ? `<strong>${esc(item.name)}</strong>` : '<span class="unnamed">—</span>'}</td>
+          <td>
+            <span class="type-pill ${isDs ? 'pill-ds' : 'pill-vs'}">${isDs ? '🗄️ Dataset' : '📊 Visual'}</span>
+            <span class="complexity-tag">${esc(item.data.label)}</span>
+          </td>
+          <td class="r">${item.qty}</td>
+          <td class="r">${item.data.sp * item.qty}</td>
+          <td class="r">~${h2d(item.data.hours * item.qty)}</td>
+          <td style="text-align:right"><button class="btn-danger-sm" onclick="removeItem(${item.id})" title="Remove">×</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      renderRows(ds);
+      if (ds.length > 0 && vs.length > 0) {
+        const sep = document.createElement('tr');
+        sep.className = 'divider';
+        sep.innerHTML = '<td colspan="6"></td>';
+        tbody.appendChild(sep);
+      }
+      renderRows(vs);
+
+      // Footer
+      const tfoot = $('history-tfoot');
+      const dsSP  = ds.reduce((s,i) => s + i.data.sp * i.qty, 0);
+      const vsSP  = vs.reduce((s,i) => s + i.data.sp * i.qty, 0);
+      const dsQty = ds.reduce((s,i) => s + i.qty, 0);
+      const vsQty = vs.reduce((s,i) => s + i.qty, 0);
+
+      let footHtml = '';
+      if (ds.length > 0 && vs.length > 0) {
+        footHtml += `
+          <tr>
+            <td colspan="2" style="color:#6366f1;font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase">Datasets subtotal</td>
+            <td class="r" style="color:#a5b4fc">${dsQty}</td>
+            <td class="r" style="color:#a5b4fc">${dsSP}</td>
+            <td class="r" style="color:#a5b4fc">~${h2d(totalDsH)}</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td colspan="2" style="color:#a855f7;font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase">Visuals subtotal</td>
+            <td class="r" style="color:#d8b4fe">${vsQty}</td>
+            <td class="r" style="color:#d8b4fe">${vsSP}</td>
+            <td class="r" style="color:#d8b4fe">~${h2d(totalVsH)}</td>
+            <td></td>
+          </tr>
+        `;
+      }
+      footHtml += `
+        <tr style="border-top:1px solid #2d3348">
+          <td colspan="2" style="font-weight:700;font-size:0.875rem">Total</td>
+          <td class="r" style="font-weight:700;color:#e2e8f0">${totalQty}</td>
+          <td class="r" style="font-weight:700;color:#e2e8f0">${totalSP}</td>
+          <td class="r" style="font-weight:700;color:#e2e8f0">~${h2d(totalH)}</td>
+          <td></td>
+        </tr>
+      `;
+      tfoot.innerHTML = footHtml;
+    }
+
+    // Total card
+    if (!totalH) {
+      $('total-empty').style.display   = 'block';
+      $('total-content').style.display = 'none';
+    } else {
+      $('total-empty').style.display   = 'none';
+      $('total-content').style.display = 'block';
+
+      const band = getBand(totalH);
+      $('total-big').textContent   = h2d(totalH);
+      $('total-big').style.color   = band.color;
+      $('total-range').textContent = h2d(totalH * 0.8) + ' – ' + h2d(totalH * 1.3);
+
+      const badge = $('total-band');
+      badge.textContent    = band.label;
+      badge.style.color    = band.color;
+      badge.style.background = band.color + '22';
+      badge.style.border   = `1px solid ${band.color}55`;
+
+      $('stat-ds').textContent = h2d(totalDsH);
+      $('stat-vs').textContent = h2d(totalVsH);
+      $('stat-sp').textContent = totalSP;
+
+      const dsPct = Math.round(totalDsH / totalH * 100);
+      $('bar-ds').style.width = dsPct + '%';
+      $('bar-vs').style.width = (100 - dsPct) + '%';
+      $('bar-ds-label').textContent = `🗄️ Datasets ${dsPct}%`;
+      $('bar-vs-label').textContent = `📊 Visuals ${100 - dsPct}%`;
+    }
+  }
+</script>
+</body>
+</html>
